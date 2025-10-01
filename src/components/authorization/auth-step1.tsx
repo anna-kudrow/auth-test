@@ -1,9 +1,6 @@
 "use client";
-import Heading3 from "../shared/heading3";
-import AuthLayout from "./auth-layout";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +10,11 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
+import Lock from "../icons/lock";
+import User from "../icons/user";
+import Heading3 from "../shared/heading3";
 import { Input } from "../ui/input";
+import AuthLayout from "./auth-layout";
 
 const formSchema = z.object({
   email: z.string().min(7).max(50),
@@ -43,9 +44,12 @@ function AuthStep1() {
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="relative">
+                <div className="-translate-y-1/2 absolute top-1/2 left-3">
+                  <User />
+                </div>
                 <FormControl>
-                  <Input placeholder="Email" {...field} />
+                  <Input type="email" placeholder="Email" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -55,15 +59,24 @@ function AuthStep1() {
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="relative">
+                <div className="-translate-y-1/2 absolute top-1/2 left-3">
+                  <Lock />
+                </div>
                 <FormControl>
-                  <Input placeholder="Password" {...field} />
+                  <Input type="password" placeholder="Password" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <Button type="submit">Submit</Button>
+          <Button
+            className="w-full text-secondary-foreground"
+            disabled
+            type="submit"
+          >
+            Log in
+          </Button>
         </form>
       </Form>
     </AuthLayout>
