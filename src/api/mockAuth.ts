@@ -2,6 +2,8 @@ export type LoginDto = { email: string; password: string };
 
 export type LoginResponse = { needs2FA: boolean; sessionId?: string };
 
+
+
 export function mockLogin(data: LoginDto): Promise<LoginResponse> {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
@@ -11,6 +13,6 @@ export function mockLogin(data: LoginDto): Promise<LoginResponse> {
       } else {
         reject(new Error("Неверный логин или пароль"));
       }
-    }, 1000);
+    }, 500);
   });
 }
