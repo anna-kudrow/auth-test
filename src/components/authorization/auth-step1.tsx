@@ -15,27 +15,47 @@ import User from "../icons/user";
 import Heading3 from "../shared/heading3";
 import { Input } from "../ui/input";
 import AuthLayout from "./auth-layout";
+import { useMutation } from "@tanstack/react-query";
+
+import { mockLogin } from "../../api/mockAuth";
+import { useNavigate } from "react-router";
+import { useState } from "react";
 
 const formSchema = z.object({
   email: z.string().min(7).max(50),
-  password: z.string().min(8).max(50),
+  password: z.string().min(3).max(50),
 });
 
 function AuthStep1() {
+  const [isInputDataWrong, setInputDataWrong] = useState(false);
+
+  const navigate = useNavigate();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      username: "",
+    mode: "onSubmit",
+  });
+
+  const mutation = useMutation({
+    mutationFn: (data: z.infer<typeof formSchema>) => mockLogin(data),
+    onSuccess: (response) => {
+      if (response.needs2FA) {
+        setInputDataWrong(false);
+        navigate("/sign-in-step2");
+      }
+    },
+    onError: (error: any) => {
+      setInputDataWrong(true);
     },
   });
+
   function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
+    mutation.mutate(values);
   }
+
   return (
     <AuthLayout>
-      <Heading3>
+      <Heading3 className="mb-6">
         Sign in to your account to <br /> continue
       </Heading3>
       <Form {...form}>
@@ -44,12 +64,14 @@ function AuthStep1() {
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem className="relative">
-                <div className="-translate-y-1/2 absolute top-1/2 left-3">
-                  <User />
-                </div>
+              <FormItem>
                 <FormControl>
-                  <Input type="email" placeholder="Email" {...field} />
+                  <div className="relative">
+                    <div className="-translate-y-1/2 absolute top-1/2 left-3">
+                      <User />
+                    </div>
+                    <Input type="email" placeholder="Email" {...field} />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -59,25 +81,28 @@ function AuthStep1() {
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem className="relative">
-                <div className="-translate-y-1/2 absolute top-1/2 left-3">
-                  <Lock />
-                </div>
+              <FormItem>
                 <FormControl>
-                  <Input type="password" placeholder="Password" {...field} />
+                  <div className="relative">
+                    <div className="-translate-y-1/2 absolute top-1/2 left-3">
+                      <Lock />
+                    </div>
+                    <Input type="password" placeholder="Password" {...field} />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
           <Button
-            className="w-full text-secondary-foreground"
-            disabled
+            className="w-full"
+            disabled={!form.formState.isValid}
             type="submit"
           >
             Log in
           </Button>
         </form>
+        {isInputDataWrong && <div>Invalid username or password</div>}
       </Form>
     </AuthLayout>
   );
