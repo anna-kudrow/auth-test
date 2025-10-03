@@ -1,8 +1,8 @@
 import { Navigate, Route, Routes } from "react-router";
 import "./App.css";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AuthStep1 from "./components/authorization/auth-step1";
 import AuthStep2 from "./components/authorization/auth-step2";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 function App() {
   const queryClient = new QueryClient();

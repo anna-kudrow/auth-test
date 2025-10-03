@@ -1,6 +1,9 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,16 +13,12 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
+import { mockLogin } from "../../api/mockAuth";
 import Lock from "../icons/lock";
 import User from "../icons/user";
 import Heading3 from "../shared/heading3";
 import { Input } from "../ui/input";
 import AuthLayout from "./auth-layout";
-import { useMutation } from "@tanstack/react-query";
-
-import { mockLogin } from "../../api/mockAuth";
-import { useNavigate } from "react-router";
-import { useState } from "react";
 
 const formSchema = z.object({
   email: z.string().min(7).max(50),
@@ -36,7 +35,7 @@ function AuthStep1() {
     mode: "onSubmit",
   });
 
-  const mutation = useMutation({
+  const authMutation = useMutation({
     mutationFn: (data: z.infer<typeof formSchema>) => mockLogin(data),
     onSuccess: (response) => {
       if (response.needs2FA) {
@@ -44,13 +43,13 @@ function AuthStep1() {
         navigate("/sign-in-step2");
       }
     },
-    onError: (error: any) => {
+    onError: (_error: any) => {
       setInputDataWrong(true);
     },
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    mutation.mutate(values);
+    authMutation.mutate(values);
   }
 
   return (

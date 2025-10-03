@@ -1,56 +1,47 @@
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import z from "zod";
-import Heading3 from "../shared/heading3";
-import AuthLayout from "./auth-layout";
+import { mockVerify2FA } from "@/api/mock2FA";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "../ui/form";
+import { cn } from "@/lib/utils";
+import Heading3 from "../shared/heading3";
 import { Button } from "../ui/button";
-import { useEffect, useState } from "react";
-import { mockVerify2FA } from "@/api/mock2FA";
-import { useNavigate } from "react-router";
-import { useMutation } from "@tanstack/react-query";
+import { Form, FormControl, FormField, FormItem } from "../ui/form";
+import AuthLayout from "./auth-layout";
 
 const FormSchema = z.object({
-  pin: z.string().min(6, {
-    message: "Invalid code",
-  }),
+  pin: z.string().length(6, { message: "Code must be exactly 6 digits" }),
 });
 
 function AuthStep2() {
   const [isGetNewPinActive, setGetNewPinActive] = useState(false);
 
-  const navigate = useNavigate();
+  const [isPinCorrect, setIsPinCorrect] = useState(true);
 
-  // Мутация для проверки 2FA
   const verifyMutation = useMutation({
     mutationFn: (pin: string) => mockVerify2FA(pin),
     onSuccess: () => {
-      // редирект после успешной проверки
       console.log("Yahoooo!");
+      setIsPinCorrect(true);
     },
-    onError: (error: any) => {
-      alert(error.message);
+    onError: (_error: any) => {
+      setIsPinCorrect(false);
     },
   });
 
-  // Автоматически проверяем при открытии страницы
-  // useEffect(() => {
-  //   // если хочешь передать default pin для автотеста
-  //   const defaultPin = "123456";
-  //   verifyMutation.mutate(defaultPin);
-  // }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setGetNewPinActive(true);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
@@ -59,7 +50,9 @@ function AuthStep2() {
     },
   });
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {}
+  function onSubmit(data: z.infer<typeof FormSchema>) {
+    verifyMutation.mutate(data.pin);
+  }
 
   return (
     <AuthLayout>
@@ -68,31 +61,50 @@ function AuthStep2() {
         Enter the 6-digit code from the Google <br /> Authenticator app
       </p>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className=" space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
             name="pin"
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <InputOTP maxLength={6}>
-                    <InputOTPGroup className="gap-[10px] w-full flex justify-center">
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                      <InputOTPSlot index={5} />
+                  <InputOTP
+                    maxLength={6}
+                    pattern={REGEXP_ONLY_DIGITS}
+                    onChange={field.onChange}
+                    value={field.value}
+                  >
+                    <InputOTPGroup className="flex w-full justify-between gap-[10px]">
+                      {Array.from({ length: 6 }).map((_, index) => (
+                        <InputOTPSlot
+                          // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+                          key={index}
+                          className={cn(
+                            !isPinCorrect && "border border-destructive",
+                          )}
+                          index={index}
+                        />
+                      ))}
                     </InputOTPGroup>
                   </InputOTP>
                 </FormControl>
-                <FormMessage />
+                {!isPinCorrect && (
+                  <p className="text-start text-destructive text-sm">
+                    Invalid code
+                  </p>
+                )}
               </FormItem>
             )}
           />
-          <Button className="w-full" type="submit">
-            Continue
-          </Button>
+          {isGetNewPinActive ? (
+            <Button className="w-full" type="button">
+              Get new
+            </Button>
+          ) : (
+            <Button className="w-full" type="submit">
+              Continue
+            </Button>
+          )}
         </form>
       </Form>
     </AuthLayout>
